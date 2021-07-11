@@ -1,0 +1,290 @@
+---
+title: "PREDICTING CAR PRICES USING MULTIPLE LINEAR REGRESSION"
+author: "kipngenokoech"
+date: "7/11/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE)
+```
+
+## INTRODUCION
+Regression analysis is basically a process of estimating dependent variable with one or more independent variables. We have two major types of regression simple linear regression and multiple linear regression.Simple regression attempts to predict response variable with single predictor variable while multiple regression predicts response variable based on more than one predictor variables. The first step in any machine learning task is to load the required libraries into our environment using the function library.If you have not installed the libraries use the function *install.packages()*.
+
+```{r}
+#IMPORTING PACKAGES
+library(gridExtra) # grid layouts
+library(pastecs) # details summary stats
+library(ggplot2) # visualizations
+library(gmodels) # build contingency tables
+library(psych)
+library(caret)
+library(car)
+library(GGally)
+library(tidyverse)
+library(grid)
+library(plyr)
+```
+
+```{r}
+#Reading in files and having a check on the data.
+audi<-read.csv("audi.csv")
+summary(audi)
+str(audi)
+head(audi)#checking the first 6 rows
+```
+
+The data has 10668 observations and 9 variables.Price is our target variable while model,year,transmission ,mileage,fuelType,mpg and engine size are the predictor variables.
+
+## EXPLORATORY DATA ANALYSIS
+```{r}
+#checking if we have any NA values.
+colSums(is.na(audi))
+```
+
+The data has no missing values.At times you may encounter dataset that has missing values and the best option is to estimate the missing fields. R has a package *mice* which gives us an methods to impute missing values.The values are drawned from a distribution for each missing point.
+
+```{r}
+# function to tranform variables to factors
+to.factors <- function(df, variables){
+  for (variable in variables){
+    df[[variable]] <- as.factor(df[[variable]])
+  }
+  return(df)
+}
+
+categoricalvars<-c("model","transmission","fuelType","year","engineSize","tax")
+audi<-to.factors(df=audi,variables = categoricalvars)
+str(audi)
+```
+
+An important step before any machine learning task  is to check how  our variables have been coded. We have to converted the following variables into factors `model`,`transmission`,`year`,`fuelType`,`tax` and `engineSize`.
+
+### Data visualization
+ * Factor variables
+ 
+```{r}
+ ggplot(audi,aes(model))+geom_bar()+labs(title='BARPLOT OF AUDI   MODELS',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))+geom_text(stat='count', aes(label=..count..), vjust=-1)
+```
+
+
+
+The plot above represent the count per each model.*A3* having the most count followed by *A5* and *A2*. *RS7* has the least count.
+ 
+ 
+```{r}
+ggplot(audi,aes(model,fill=fuelType))+geom_bar()+labs(title='MODEL COUNT W.R.T  FUEL TYPE',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+ 
+ 
+ 
+A higher significant number of Audi  uses  petrol followed by diesel and a smaller percentage uses hybrid. We can conclude also that the R model of Audi cars uses petrol only.
+
+
+```{r}
+ggplot(audi,aes(model,fill=year))+geom_bar()+labs(title='COUNT PER  MODEL W.R.T YEAR',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+
+
+*2015-2020* Audi models have greater significant number of cars in our data.
+
+
+```{r}
+ggplot(audi,aes(model,fill=engineSize))+geom_bar()+labs(title='COUNT PER  MODEL W.R.T ENGINE SIZE',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+
+
+Most of the Audi models runs with engine size from 1 to 3, 2 taking the highest proportion as shown above.
+
+
+```{r}
+ggplot(audi,aes(model,fill=transmission))+geom_bar()+labs(title='COUNT PER  MODEL W.R.T TRANSMISSION',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+
+
+The Manual Audi  model took the highest proportion followed by semi-auto and lastly  automatic. It also appears that R model are produced in  automatic and semi-auto transmission.
+
+
+* Numeric variables
+  
+  *Histogram and frequency polygon
+
+```{r}
+ggplot(audi,aes(price))+geom_histogram(bins = 60)+labs(title=' DISTRIBUTION OF PRICES',x='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+```
+
+
+
+Histogram is used to illustrate the distribution of continuous variables.From the above, prices are positively skewed or right skewed this is because a large number of data values occur on the left side with a fewer number of data values on the right side. It can also be shown by a longer tail on the right side.
+
+
+```{r}
+ggplot(audi,aes(price,col=fuelType))+geom_freqpoly(bins=50)+labs(title='FREQUENCY POLYGON OF CAR PRICES PER FUEL TYPE',x='Price')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+
+
+
+The frequency polygon displays distribution of prices per fuel type.Prices   are positively skewed shown by the long tail towards the right based on each fuel type.
+
+
+```{r}
+ggplot(audi,aes(price,col=transmission))+geom_freqpoly(bins=50)+labs(title='FREQUENCY POLYGON OF CAR PRICES PER TRANSMISSION',x='Price')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
+```
+The distribution of prices based on transmission is positively skewed as shown by the the frequency polygon. A higher frequency of each transmission range from  approcimately $2200 to $35000.
+
+```{r}
+p1<-ggplot(audi,aes(mpg))+geom_histogram()+labs(title='DISTRIBUTION OF  MPG',x='MPG')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+
+p2<-ggplot(audi,aes(mpg))+geom_freqpoly()+labs(title='FREQUENCY POLYGON OF MPG',x='MPG')+theme(panel.background = element_rect(fill = 'aquamarine'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+
+grid.arrange(p1 + ggtitle(""),
+             p2 + ggtitle(""),
+             nrow = 1,
+             top = textGrob("DISTRIBUTION OF MPG ", 
+                            gp=gpar(fontsize=10)))
+```
+
+
+Both hostogram and frequency polygon have shown that MPG is right skewed which is clearly depicted by a  longer tail on the rigt side of the plot.
+
+```{r}
+options(scipen=10000)
+ggplot(audi,aes(mileage))+geom_histogram()+labs(title='DISTRIBUTION OF MILLEAGE',x='MILEAGE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+```
+
+The distribution of mileage is highly skewed. A significant number of values lies within the left side of the histogram making it a positively skewed distribution.
+
+ 
+  *BOXPLOTS
+  
+  
+```{r}
+ggplot(audi,aes(transmission,price,fill=transmission))+geom_boxplot()+labs(title = 'PRICE W.R.T TRANSMISSION',x='TRANSMISSION',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan3'))
+```
+
+
+Automatic is expensive on average compared to manual and semi-auto.
+
+```{r}
+ggplot(audi,aes(transmission,price,fill=fuelType))+geom_boxplot()+labs(title = 'PRICE W.R.T TRANSMISSION AND FUEL TYPE',x='TRANSMISSION',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan3'))
+```
+
+
+
+From the boxplot above, Automatic models that consume petrol and diesel have higher prices than hybrid. We do not have hybrid manual model.Hybrid semi-auto goes for higher prices compared to diesel and petrol.
+
+
+```{r}
+ggplot(audi,aes(year,price,fill))+geom_boxplot()+labs(title = 'PRICE W.R.T YEAR',x='YEAR',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+```
+
+
+The Audi Prices increases with the year of production. The car prices on average increases as it tend to 2020.
+
+
+```{r}
+ggplot(audi,aes(engineSize,price,fill=engineSize))+geom_boxplot() +labs(title = 'PRICE W.R.T ENGINE SIZE',x='ENGINE SIZE',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan3'))
+```
+
+From the pattern shown by the boxplot above ,as engine size goes up the prices also increases on average.
+
+
+
+* Relaionship between variables
+
+```{r}
+ggplot(audi,aes(mileage,price))+geom_smooth(se=FALSE)+labs(title = 'R.B MILEAGE AND PRICE',x='MILEAGE',y='PRICE')+theme(panel.background = element_rect(fill='lightcyan'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))+geom_point()
+```
+
+
+The scatter plot shows an inverse relationship between price and mileage Which clearly shows a non-linear relationship.
+
+
+```{r}
+ggplot(audi,aes(mpg,price))+geom_smooth(se=FALSE)+labs(title = 'R.B PRICE AND MPG',x='MPG',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'))
+```
+
+
+A unit change in MPG does not result in the same change in PRICE which makes the relationship between price and mpg non-linear.
+
+
+```{r}
+ggplot(audi,aes(mpg,price,col=transmission))+geom_smooth(se=FALSE)+labs(title = 'R.B PRICE AND MPG W.R.T TRANSMISSION',x='MPG',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'cadetblue'))
+```
+
+
+From the above plot, we can see that prices and MPG have a non linear relationship with respect to transmission.
+
+
+## DATA TRANFORMATION
+```{r}
+normalize<-function(x){return((x-min(x))/(max(x)-min(x)))}
+attach(audi)
+audi$mileage<-normalize(audi$mileage)
+audi$mpg<-normalize(audi$mpg)
+```
+
+## MODEL BUILDING
+```{r}
+model<-lm(price~.,data = audi)
+summary(model)
+```
+
+
+
+## IMPROVING MODELACCURACY
+```{r}
+#checking collinearity between mpg and mileage
+X<-audi[,c(5,8)]
+ggpairs(X)
+
+
+```
+
+
+Mileage and mpg has a correlation of `0.395` which is low. High correlation among predictors is the root course of collinearity.
+
+
+```{r}
+#assumption about residuals
+
+plot(model)
+```
+
+
+The diagnostic plot is fair.The dots are randomly placed around horizontal line in the first plot, which clearly shows a constant variance across residuals.
+
+```{r}
+#checking non-linear relationship between price and mpg
+mpg<-ggplot(audi,aes(mpg,price))+geom_point()
+mpg2<-ggplot(audi,aes(mpg^2,price))+geom_point()
+grid.arrange(mpg, mpg2, ncol=2)
+```
+
+
+Squaring MPG  results in a straight line pattern hence `MPG^2` is appropriate for improving our model accuracy.
+
+
+```{r}
+#checking non-linear relationship between price and mileage
+mileage<-ggplot(audi,aes(mileage,price))+geom_point()
+mileage2<-ggplot(audi,aes(mileage^2,price))+geom_point()
+grid.arrange(mileage, mileage2, ncol=2)
+```
+
+
+A straight line pattern is depicted by `mileage^2`.
+
+## model bulding
+
+```{r}
+audi$mileage2<-audi$mileage^2
+audi$mpg2<-audi$mpg^2
+model2<-lm(price~ model+year+transmission+mileage+mileage2+fuelType+tax+mpg+mpg2+engineSize,data=audi)
+
+summary(model2)
+```
+
+
+The R-Squared value has improved from `0.9284` to `0.9313`.Our model is now explaining about 93 percent of variation in audi prices. The p-value is highly significant which shows that there is a sufficient evidence in your sample to conclude that a non-zero correlation exists.
