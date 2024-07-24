@@ -3,6 +3,10 @@ PREDICTING CAR PRICES USING MULTIPLE LINEAR REGRESSION
 kipngenokoech
 7/11/2021
 
+The first step in
+any machine learning task is to load the required libraries into our
+environment using the function library.If you have not installed the
+libraries use the function *install.packages()*.
 ``` r
 #IMPORTING PACKAGES
 library(gridExtra) # grid layouts
@@ -73,9 +77,7 @@ head(audi)#checking the first 6 rows
     ## 5    A3 2019 17300       Manual    1998   Petrol 145 49.6        1.0
     ## 6    A1 2016 13900    Automatic   32260   Petrol  30 58.9        1.4
 
-The data has 10668 observations and 9 variables.Price is our target
-variable while model,year,transmission ,mileage,fuelType,mpg and engine
-size are the predictor variables.
+The data has 10668 observations and 9 variables. Price is our target variable while model,year,transmission,mileage,fuel type,mpg and engine size are the predictor variables.
 
 ## EXPLORATORY DATA ANALYSIS
 
@@ -89,11 +91,7 @@ colSums(is.na(audi))
     ##          tax          mpg   engineSize 
     ##            0            0            0
 
-The data has no missing values.At times you may encounter dataset that
-has missing values and the best option is to estimate the missing
-fields. R has a package *mice* which gives us an methods to impute
-missing values.The values are drawned from a distribution for each
-missing point.
+The data has no missing values. Sometimes you may encounter a dataset with missing values and the best option is to estimate the missing fields. R has a package *mice* which gives us methods to impute missing values. The values are drawn from a distribution for each missing point.
 
 ``` r
 # function to tranform variables to factors
@@ -120,8 +118,8 @@ str(audi)
     ##  $ mpg         : num  55.4 64.2 55.4 67.3 49.6 58.9 61.4 70.6 60.1 55.4 ...
     ##  $ engineSize  : Factor w/ 19 levels "0","1","1.2",..: 4 9 4 9 2 4 9 9 4 4 ...
 
-An important step before any machine learning task is to check how our
-variables have been coded. We have to converted the following variables
+Before any machine learning task, an important step is to check how our
+variables have been coded. We have to convert the following variables
 into factors `model`,`transmission`,`year`,`fuelType`,`tax` and
 `engineSize`.
 
@@ -137,7 +135,7 @@ into factors `model`,`transmission`,`year`,`fuelType`,`tax` and
 
 ![](LRM_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-The plot above represent the count per each model.*A3* having the most
+The plot above represents the count per each model .*A3* having the most
 count followed by *A5* and *A2*. *RS7* has the least count.
 
 ``` r
@@ -146,9 +144,9 @@ ggplot(audi,aes(model,fill=fuelType))+geom_bar()+labs(title='MODEL COUNT W.R.T  
 
 ![](LRM_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-A higher significant number of Audi uses petrol followed by diesel and a
-smaller percentage uses hybrid. We can conclude also that the R model of
-Audi cars uses petrol only.
+A significant number of Audi use petrol followed by diesel and a
+smaller percentage use hybrid. We can conclude also that the R model of
+Audi cars use petrol only.
 
 ``` r
 ggplot(audi,aes(model,fill=year))+geom_bar()+labs(title='COUNT PER  MODEL W.R.T YEAR',x='MODEL')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan4'))
@@ -156,7 +154,7 @@ ggplot(audi,aes(model,fill=year))+geom_bar()+labs(title='COUNT PER  MODEL W.R.T 
 
 ![](LRM_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-*2015-2020* Audi models have greater significant number of cars in our
+*2015-2020* Audi models have a greater significant number of cars in our
 data.
 
 ``` r
@@ -165,7 +163,7 @@ ggplot(audi,aes(model,fill=engineSize))+geom_bar()+labs(title='COUNT PER  MODEL 
 
 ![](LRM_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-Most of the Audi models runs with engine size from 1 to 3, 2 taking the
+Most of the Audi models run with engine sizes from 1 to 3, 2 taking the
 highest proportion as shown above.
 
 ``` r
@@ -175,7 +173,7 @@ ggplot(audi,aes(model,fill=transmission))+geom_bar()+labs(title='COUNT PER  MODE
 ![](LRM_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 The Manual Audi model took the highest proportion followed by semi-auto
-and lastly automatic. It also appears that R model are produced in
+and lastly automatic. It also appears that R models are produced in
 automatic and semi-auto transmission.
 
   - Numeric variables
@@ -229,8 +227,8 @@ grid.arrange(p1 + ggtitle(""),
 
 ![](LRM_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
-Both hostogram and frequency polygon have shown that MPG is right skewed
-which is clearly depicted by a longer tail on the rigt side of the plot.
+Both histogram and frequency polygon have shown that MPG is right-skewed
+which is depicted by a longer tail on the right side of the plot.
 
 ``` r
 options(scipen=10000)
@@ -240,7 +238,7 @@ ggplot(audi,aes(mileage))+geom_histogram()+labs(title='DISTRIBUTION OF MILLEAGE'
 ![](LRM_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 The distribution of mileage is highly skewed. A significant number of
-values lies within the left side of the histogram making it a positively
+values lie within the left side of the histogram making it a positively
 skewed distribution.
 
 \*BOXPLOTS
@@ -251,7 +249,7 @@ ggplot(audi,aes(transmission,price,fill=transmission))+geom_boxplot()+labs(title
 
 ![](LRM_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-Automatic is expensive on average compared to manual and semi-auto.
+Automatic is expensive on average compared to manual and semi-automatic.
 
 ``` r
 ggplot(audi,aes(transmission,price,fill=fuelType))+geom_boxplot()+labs(title = 'PRICE W.R.T TRANSMISSION AND FUEL TYPE',x='TRANSMISSION',y='PRICE')+theme(panel.background = element_rect(fill = 'lightcyan2'),plot.title = element_text(hjust = 0.5,face = 'bold',colour = 'cadetblue'),legend.background = element_rect(fill = 'lightcyan3'))
@@ -260,8 +258,8 @@ ggplot(audi,aes(transmission,price,fill=fuelType))+geom_boxplot()+labs(title = '
 ![](LRM_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 From the boxplot above, Automatic models that consume petrol and diesel
-have higher prices than hybrid. We do not have hybrid manual
-model.Hybrid semi-auto goes for higher prices compared to diesel and
+have higher prices than hybrid. We do not have the hybrid manual
+model. Hybrid semi-auto goes for higher prices compared to diesel and
 petrol.
 
 ``` r
@@ -279,10 +277,10 @@ ggplot(audi,aes(engineSize,price,fill=engineSize))+geom_boxplot() +labs(title = 
 
 ![](LRM_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-From the pattern shown by the boxplot above ,as engine size goes up the
-prices also increases on average.
+From the pattern shown by the boxplot above,as engine size goes up the
+prices also increase on average.
 
-  - Relaionship between variables
+  - Relationship between variables
 
 <!-- end list -->
 
@@ -452,7 +450,7 @@ summary(model)
     ## Multiple R-squared:  0.9284, Adjusted R-squared:  0.9277 
     ## F-statistic:  1305 on 105 and 10562 DF,  p-value: < 0.00000000000000022
 
-## IMPROVING MODELACCURACY
+## IMPROVING MODEL ACCURACY
 
 ``` r
 #checking collinearity between mpg and mileage
@@ -462,7 +460,7 @@ ggpairs(X)
 
 ![](LRM_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
-Mileage and mpg has a correlation of `0.395` which is low. High
+Mileage and mpg have a correlation of `0.395` which is low. High
 correlation among predictors is the root course of collinearity.
 
 ``` r
@@ -473,7 +471,7 @@ plot(model)
 
 ![](LRM_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->![](LRM_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->![](LRM_files/figure-gfm/unnamed-chunk-25-3.png)<!-- -->![](LRM_files/figure-gfm/unnamed-chunk-25-4.png)<!-- -->
 
-The diagnostic plot is fair.The dots are randomly placed around
+The diagnostic plot is fair. The dots are randomly placed around
 horizontal line in the first plot, which clearly shows a constant
 variance across residuals.
 
@@ -500,7 +498,7 @@ grid.arrange(mileage, mileage2, ncol=2)
 
 A straight line pattern is depicted by `mileage^2`.
 
-## model bulding
+## model building
 
 ``` r
 audi$mileage2<-audi$mileage^2
@@ -636,7 +634,6 @@ summary(model2)
     ## Multiple R-squared:  0.9313, Adjusted R-squared:  0.9306 
     ## F-statistic:  1338 on 107 and 10560 DF,  p-value: < 0.00000000000000022
 
-The R-Squared value has improved from `0.9284` to `0.9313`.Our model is
-now explaining about 93 percent of variation in audi prices. The p-value
-is highly significant which shows that there is a sufficient evidence in
-your sample to conclude that a non-zero correlation exists.
+The R-squared value has improved from `0.9284` to `0.9313`.Our model is
+now explaining about 93 per cent of variation in audi prices. The p-value
+is highly significant which is sufficient evidence to conclude that a non-zero correlation exists.
